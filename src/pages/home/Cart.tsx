@@ -1,0 +1,185 @@
+import { useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Navbar from "../component/Navbar";
+import type { productState } from "../../state/reducer/ProductReducer";
+import { NavLink, useNavigate } from "react-router-dom";
+import { ArrowBack, ArrowForward } from "@mui/icons-material";
+import { Button, IconButton } from "@mui/material";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {
+  buyAction,
+  decrementProduct,
+  incrementProduct,
+  removeFromCart,
+} from "../../state/action/Action";
+
+const Cart = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const productState: productState = useSelector(
+    (state: any) => state.ProductReducer
+  );
+
+  const cartData = useMemo(() => {
+    return productState.cartItems.map((cartItem) => {
+      const productDetails = productState.products.find(
+        (p) => p.id === cartItem.id
+      );
+      return {
+        ...productDetails,
+        quantity: cartItem.totalNumber,
+      };
+    });
+  }, [productState]);
+
+  const handleBuyNow = () => {
+    dispatch(buyAction(cartData));
+    navigate("/checkout-page");
+  };
+
+  const onClickPlus = (element: any) => {
+    dispatch(incrementProduct(element.id));
+  };
+
+  const onClickMinus = (element: any) => {
+    if (element.quantity == 1) {
+      dispatch(removeFromCart(element.id));
+    } else {
+      dispatch(decrementProduct(element.id));
+    }
+  };
+
+  return (
+    <div>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <ToastContainer theme="light" />
+
+        <div className="max-w-6xl mx-auto mb-6">
+          <NavLink to="/home-page">
+            <IconButton className="bg-white shadow-md hover:bg-gray-100">
+              <ArrowBack />
+            </IconButton>
+          </NavLink>
+        </div>
+
+        <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              Shopping Cart
+            </h2>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b text-gray-600 uppercase text-sm">
+                    <th className="py-4 px-2">Product Name</th>
+                    <th className="py-4 px-2">Image</th>
+                    <th className="py-4 px-2 text-center">Quantity</th>
+                    <th className="py-4 px-2 text-right">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cartData.length > 0 ? (
+                    cartData.map((elem) => (
+                      <tr
+                        key={elem.id}
+                        className="border-b hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="py-4 px-2 font-medium text-gray-800 max-w-50 truncate">
+                          {elem.title}
+                        </td>
+                        <td className="py-4 px-2">
+                          <img
+                            className="h-20 w-20 object-contain rounded-md bg-white border"
+                            src={elem.image}
+                            alt={elem.title}
+                          />
+                        </td>
+                        <td className="py-4 px-2">
+                          <div className="flex items-center justify-center space-x-3">
+                            <button
+                              className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors flex items-center justify-center font-bold"
+                              onClick={() => onClickMinus(elem)}
+                            >
+                              -
+                            </button>
+                            <span className="w-8 text-center font-semibold">
+                              {elem.quantity}
+                            </span>
+                            <button
+                              className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors flex items-center justify-center font-bold"
+                              onClick={() => onClickPlus(elem)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-4 px-2 text-right font-bold text-purple-600">
+                          $
+                          {((elem.price || 0) * (elem.quantity || 0)).toFixed(
+                            2
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-20 text-center">
+                        <h3 className="text-xl text-gray-500 mb-4">
+                          Your cart is empty
+                        </h3>
+                        <button
+                          onClick={() => navigate("/home-page")}
+                          className="text-purple-600 hover:underline flex items-center justify-center mx-auto gap-2"
+                        >
+                          Want to buy something?
+                          <ArrowForward fontSize="small" />
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {cartData.length > 0 && (
+              <div className="mt-8 flex flex-col items-end border-t pt-6">
+                <div className="mb-4">
+                  <span className="text-gray-600 mr-4">Total Amount:</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    $
+                    {cartData
+                      .reduce(
+                        (acc, curr) =>
+                          acc + (curr.price || 0) * (curr.quantity || 0),
+                        0
+                      )
+                      .toFixed(2)}
+                  </span>
+                </div>
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    bgcolor: "black",
+                    "&:hover": { bgcolor: "#333" },
+                    px: 6,
+                    py: 1.5,
+                    borderRadius: "8px",
+                  }}
+                  onClick={handleBuyNow}
+                >
+                  Go To Checkout
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Cart;
